@@ -1,6 +1,8 @@
-import React from "react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
+import { format } from "timeago.js";
 
 const Container = styled.div`
   width: ${(props) => props.type !== "sm" && "360px"};
@@ -55,17 +57,29 @@ const Info = styled.div`
 
 
 
-const Card = ({type}) => {
+const Card = ({videoData, type}) => {
+
+  const [channelData, setChannelData] = useState({});
+
+  useEffect(() => {
+    const fetchUserChannelData = async () => {
+      const userChannelData = await axios.get(`http://localhost:3000/api/users/find/${videoData.userId}`);
+      setChannelData(userChannelData.data);
+    }
+    fetchUserChannelData();
+
+  }, [videoData.userId])
+
     return (
-        <Link to="/video/test" style={{textDecoration: "none"}}>
+        <Link to={`/video/${videoData._id}`} style={{textDecoration: "none"}}>
             <Container type={type}>
-                <Image src="https://static-cse.canva.com/blob/951430/1600w-wK95f3XNRaM.jpg" type={type}/>
+                <Image src={videoData.imgUrl} type={type}/>
                 <Details type={type}>
-                    <ProfileImage src="https://images.unsplash.com/photo-1558451511-94a1f04342df?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8Y2F0JTIwcHJvZmlsZXxlbnwwfHwwfHw%3D&w=1000&q=80" type={type}/>
+                    <ProfileImage src={channelData.img} type={type}/>
                     <Texts>
-                        <Title>Test Video</Title>
-                        <ChannelName>Lama Dev</ChannelName>
-                        <Info>660,908 views - 1 day ago</Info>
+                        <Title>{videoData.title}</Title>
+                        <ChannelName>{channelData.name}</ChannelName>
+                        <Info>{`${videoData.views} views • ${format(videoData.createdAt)}`}</Info>
                     </Texts>
                 </Details>
             </Container>

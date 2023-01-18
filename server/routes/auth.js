@@ -37,11 +37,12 @@ const signin = async (req, res, next) => {
                     const token = jwt.sign({id: user._id}, process.env.JWT);
                     const { password, ...userdData } = user._doc;
                     // Saves the token in cookies so the web can understand if the legit user is signin in ig...
-                    res.cookie("access_token", token, {httpOnly: true}).status(200).json(userdData);
+                    res.cookie("access_token", token, { httpOnly: false, sameSite: 'lax', secure: false }).status(200).json(userdData);
                 }
                 else {
                     next(createError(403, "Incorrect credentials!"))
                 }
+                next();
             });
         }
     } catch (error) {
@@ -49,8 +50,30 @@ const signin = async (req, res, next) => {
     }
 }
 
+const signinWithGoogle = async (req, res, next) => {
+    try {
+        const user = await User.findOne({email: req.body.email})
+        if (user) {
+            const token = jwt.sign({id: user._id}, process.env.JWT);
+            // Saves the token in cookies so the web can understand if the legit user is signin in ig...
+            res.cookie("access_token", token, { httpOnly: true, sameSite: 'lax', secure: false }).status(200).json(user._doc);
+        }
+        else {
+            const newUser = new User({...req.body, fromGoogle: true});
+            const savedNewUser = await newUser.save();
+            const token = jwt.sign({id: savedNewUser._id}, process.env.JWT);
+            // Saves the token in cookies so the web can understand if the legit user is signin in ig...
+            res.cookie("access_token", token, { httpOnly: true, sameSite: 'lax', secure: false }).status(200).json(savedNewUser._doc);
+        }
+    } catch (error) {
+        next(createError(403, "Google Auth Failed to Sign In, Try again later."))        
+    }
+}
+
 router.post("/signup", signup)
 
 router.post("/signin", signin);
+
+router.post("/googleauth", signinWithGoogle);
 
 export default router;

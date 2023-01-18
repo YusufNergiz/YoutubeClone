@@ -46,6 +46,6 @@ router.post("/:videoId", verifyToken, addComment);
 router.delete("/:id", verifyToken, deleteComment);
 
 // Get all the comments of a Video.
-router.get("/:videoId", verifyToken, getComments);
+router.get("/:videoId", getComments);
 
 export default router;

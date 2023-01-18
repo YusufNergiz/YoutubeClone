@@ -99,19 +99,16 @@ const getSubscribedChannelVideos = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id);
         const subscribedChannels = user.subscribedUsers;
-
-        // const allVideos = await Promise.all(subscribedChannels.map((channelId) => {
-        //     return Video.find({ userId: channelId })
-        // }))
-
-        const allVideos = await Promise.all(
-            subscribedChannels.map((channelId) => {
-                return Video.find({ userId: channelId })
-            })
-        );
-
-        res.status(200).json(allVideos.flat().sort((x, y) => y.createdAt - x.createdAt));
-
+        if (subscribedChannels) {
+            const allVideos = await Promise.all(subscribedChannels.map(async (channelId) => {
+                return await Video.find({ userId: channelId })
+            }))
+            res.status(200).json(allVideos.flat().sort((x, y) => y.createdAt - x.createdAt));
+        }
+        else {
+            next(createError(401, "You don't have any subscribed channels, try subbing to some!!"))
+            return;
+        }
     } catch (error) {
         next(error)
     }
@@ -135,30 +132,6 @@ const searchVideos = async (req, res, next) => {
 
         const searchedVideos = await Video.find({ title: { $regex: searchedTitle, $options: 'i' } }).limit(40);
         res.status(200).json(searchedVideos);
-    } catch (error) {
-        next(error)
-    }
-}
-
-const likeVideo = async (req, res, next) => {
-    try {
-        await Video.findByIdAndUpdate(req.params.videoId, {
-            $addToSet: { likes: req.user.id },
-            $pull: { dislikes: req.user.id }
-        })
-        res.status(200).json("Video Successfully Liked!")
-    } catch (error) {
-        next(error)
-    }
-}
-
-const dislikeVideo = async (req, res, next) => {
-    try {
-        await Video.findByIdAndUpdate(req.params.videoId, {
-            $addToSet: { dislikes: req.user.id },
-            $pull: { likes: req.user.id }
-        })
-        res.status(200).json("Video Successfully Disliked!")
     } catch (error) {
         next(error)
     }
@@ -194,10 +167,5 @@ router.get("/tags", getByTags);
 // Get a list of videos with the similar keywords in their titles
 router.get("/search", searchVideos);
 
-// Like a Video
-router.put("/like/:videoId", verifyToken, likeVideo);
-
-// Dislike a Video
-router.put("/dislike/:videoId", verifyToken, dislikeVideo);
 
 export default router;

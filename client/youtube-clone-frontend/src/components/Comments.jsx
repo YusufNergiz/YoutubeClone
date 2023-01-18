@@ -1,4 +1,6 @@
-import React from "react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import Comment from "./Comment";
 
@@ -27,21 +29,34 @@ const Input = styled.input`
 
 
 
-const Comments = () => {
+const Comments = ({videoId}) => {
+
+    const [allComments, setAllComments] = useState();
+
+    useEffect(() => {
+        const fetchVideoComments = async () => {
+            try {
+                const allVideoComments = await axios.get(`http://localhost:3000/api/comments/${videoId}`, {
+                    withCredentials: true
+                });
+                setAllComments(allVideoComments.data);
+            } catch (error) {
+                console.log(error.message)
+            }
+        }
+        fetchVideoComments();
+        console.log(allComments)
+    }, [])
+
     return (
         <Container>
             <NewComment>
                 <Avatar src="https://images.pexels.com/photos/45201/kitty-cat-kitten-pet-45201.jpeg?cs=srgb&dl=pexels-pixabay-45201.jpg&fm=jpg"/>
                 <Input placeholder="Add a comment..."/>
             </NewComment>
-            <Comment />
-            <Comment />
-            <Comment />
-            <Comment />
-            <Comment />
-            <Comment />
-            <Comment />
-            <Comment />
+            {allComments?.map(comment => (
+                <Comment key={comment._id} commentData={comment}/>
+            ))}
         </Container>
     );
 }

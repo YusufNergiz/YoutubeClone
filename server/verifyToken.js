@@ -3,9 +3,9 @@ import { createError } from "./error.js";
 
 export const verifyToken = (req, res, next) => {
     // Checking if the User has an access_token through cookies
-    const token = req.cookies.access_token;
+    const token = req.cookies.access_token || req.body.headers.access_token;
     if (!token) {
-        return next(createError(401, "User not Found!"));
+        return next(createError(401, "Please Login First!"));
     }
     // If yes, verify it through JWT
     jwt.verify(token, process.env.JWT, (err, user) => {

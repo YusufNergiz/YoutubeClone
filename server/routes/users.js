@@ -1,6 +1,7 @@
 import express from "express";
 import { createError } from "../error.js";
 import User from "../models/User.js";
+import Video from "../models/Video.js";
 import { verifyToken } from "../verifyToken.js";
 
 const router = express.Router();
@@ -78,6 +79,30 @@ const unsubscribe = async (req, res, next) => {
     }
 }
 
+const likeVideo = async (req, res, next) => {
+    try {
+        await Video.findByIdAndUpdate(req.params.videoId, {
+            $addToSet: { likes: req.user.id },
+            $pull: { dislikes: req.user.id }
+        })
+        res.status(200).json("Video Successfully Liked!")
+    } catch (error) {
+        next(createError(401, `${error.message}`))
+    }
+}
+
+const dislikeVideo = async (req, res, next) => {
+    try {
+        await Video.findByIdAndUpdate(req.params.videoId, {
+            $addToSet: { dislikes: req.user.id },
+            $pull: { likes: req.user.id }
+        })
+        res.status(200).json("Video Successfully Disliked!")
+    } catch (error) {
+        next(error)
+    }
+}
+
 // Update Current User Account
 router.put("/:id", verifyToken, updateUser)
 
@@ -92,6 +117,12 @@ router.put("/sub/:id", verifyToken, subscribe);
 
 //Unsubscribe to a User from the current Account
 router.put("/unsub/:id", verifyToken, unsubscribe);
+
+// Like a Video
+router.put("/like/:videoId", verifyToken, likeVideo);
+
+// Dislike a Video
+router.put("/dislike/:videoId", verifyToken, dislikeVideo);
 
 
 export default router;

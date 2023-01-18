@@ -1,12 +1,23 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
 import ReplyOutlinedIcon from '@mui/icons-material/ReplyOutlined';
 import AddTaskOutlinedIcon from '@mui/icons-material/AddTaskOutlined';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 
 import Comments from "../components/Comments";
 import Card from "../components/Card";
+import { useLoaderData, useLocation } from "react-router-dom";
+import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchingFailure, fetchingSuccess, startFetching } from "../redux/videoSlice";
+import { format } from "timeago.js";
+import { subscription } from "../redux/userSlice";
+
+import Cookies from 'js-cookie';
+
 
 const Container = styled.div`
     display: flex;
@@ -107,30 +118,95 @@ const Image = styled.img`
     border-radius: 50%;
 `
 
+const VideoFrame = styled.video`
+    max-height: 720px;
+    width: 100%;
+    object-fit: cover;
+`
+
 const Video = () => {
+
+    const randomVideos = useLoaderData();
+    const { currentUser } = useSelector((state) => state.user);
+    const { currentVideo } = useSelector((state) => state.video);
+    const dispatch = useDispatch();
+
+    const [currentChannel, setCurrentChannel] = useState();
+
+    const [accessToken, setAccessToken] = useState(Cookies.get('access_token'));
+
+    // The current video ID asbtracted from the URL
+    const videoId = useLocation().pathname.split('/video/')[1];
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                dispatch(startFetching)
+                const videoData = await axios.get(`http://localhost:3000/api/videos/find/${videoId}`);
+                const channelData = await axios.get(`http://localhost:3000/api/users/find/${videoData.data.userId}`);
+                setCurrentChannel(channelData.data);
+                dispatch(fetchingSuccess(videoData.data));
+            } catch (error) {
+                dispatch(fetchingFailure);
+                console.log(error)
+            }
+        }
+        fetchData();
+    }, [videoId, dispatch])
+
+
+    const dislikeVideo = async () => {
+        await axios.put(`http://localhost:3000/api/users/dislike/${currentVideo._id}`);
+        dispatch(dislikeVideo(currentUser._id));
+    }
+
+    const likeVideo = async () => {
+        console.log("lIKE BUTTON CLICKED")
+        await axios.put(`http://localhost:3000/api/users/like/${currentVideo._id}`, {
+            withCredentials: true,
+            headers: {
+                access_token: accessToken
+            }
+        });
+        dispatch(likeVideo(currentUser._id));
+    }
+
+    const handleSubscription = async () => {
+        if (currentUser.subscribedUsers?.includes(currentVideo.userId)) {
+            await axios.put(`http://localhost:3000/api/users/unsub/${currentVideo.userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            dispatch(subscription(currentVideo.userId));
+        }
+        else {
+            await axios.put(`http://localhost:3000/api/users/sub/${currentVideo.userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            dispatch(subscription(currentVideo.userId));
+        }
+    }
+
     return (
         <Container className="row">
             <Content className="col-xl-8 col-12">
                 <VideoWrapper>
-                <iframe
-                    width="100%"
-                    height="420"
-                    src="https://www.youtube.com/embed/k3Vfj-e1Ma4"
-                    title="YouTube video player"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen
-                ></iframe>
+                    <VideoFrame src={currentVideo?.videoUrl}/>
                 </VideoWrapper>
-                <Title>Test Title</Title>
+                <Title>{currentVideo?.title}</Title>
                 <VideoDetails>
-                    <Info>7,948,154 views • Jun 22, 2022</Info>
+                    <Info>{currentVideo?.views} views • {format(currentVideo?.createdAt)}</Info>
                     <Buttons>
-                        <Button>
-                            <ThumbUpOutlinedIcon /> 774
+                        <Button onClick={likeVideo}>
+                            {currentVideo?.likes.includes(currentUser?._id) ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />} {currentVideo?.likes.length}
                         </Button>
-                        <Button>
-                            <ThumbDownOutlinedIcon /> Dislike
+                        <Button onClick={dislikeVideo}>
+                            {currentVideo?.dislikes.includes(currentUser?._id) ? <ThumbDownIcon /> : <ThumbDownOutlinedIcon />} {currentVideo?.dislikes.length}
                         </Button>
                         <Button>
                             <ReplyOutlinedIcon /> Share
@@ -142,40 +218,36 @@ const Video = () => {
                 </VideoDetails>
                 <Channel>
                     <ChannelInfo>
-                        <Image src="https://yt3.ggpht.com/yti/APfAmoE-Q0ZLJ4vk3vqmV4Kwp0sbrjxLyB8Q4ZgNsiRH=s88-c-k-c0x00ffffff-no-rj-mo" />
+                        <Image src={currentChannel?.img} />
                         <ChannelDetail>
-                            <ChannelName>Lama Dev</ChannelName>
-                            <ChannelCounter>200K subscribers</ChannelCounter>
+                            <ChannelName>{currentChannel?.name}</ChannelName>
+                            <ChannelCounter>{currentChannel?.subscribedUsers?.length} subscribers</ChannelCounter>
                             <Description>
-                                Lorem ipsum dolor, sit amet consectetur adipisicing elit.
-                                Doloribus laborum delectus unde quaerat dolore culpa sit aliquam
-                                at. Vitae facere ipsum totam ratione exercitationem. Suscipit
-                                animi accusantium dolores ipsam ut.
+                                {currentVideo?.description}
                             </Description>
                         </ChannelDetail>
                     </ChannelInfo>
-                    <Subscribe>SUBSCRIBE</Subscribe>
+                    <Subscribe onClick={handleSubscription}>{currentUser?.subscribedUsers?.includes(currentVideo.userId) ? "UNSUBSCRIBE" : "SUBSCRIBE"}</Subscribe>
                 </Channel>
                 <Hr />
-                <Comments />
+                <Comments videoId={currentVideo?._id}/>
             </Content>
             <Recommendation className="col-xl-6 col-12">
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
-                <Card type="sm"/>
+                {randomVideos.data.map(video => (
+                    <Card type="sm" videoData={video} key={video._id}/>
+                ))}
             </Recommendation>
         </Container>     
     );
 }
 
 export default Video;
+
+export const loader = () => {
+    const fetchRandomVideos = async () => {
+        const randomVideos = await axios.get("http://localhost:3000/api/videos/random");
+        return randomVideos;
+    }
+
+    return fetchRandomVideos();
+}

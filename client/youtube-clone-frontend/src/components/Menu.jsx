@@ -19,6 +19,7 @@ import SettingsBrightnessOutlinedIcon from '@mui/icons-material/SettingsBrightne
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const Container = styled.div`
     flex: 1;
@@ -87,6 +88,9 @@ const Title = styled.h2`
 `
 
 const Menu = ({darkMode, setDarkMode}) => {
+
+    const {currentUser} = useSelector((state) => state.user);
+
     return (
         <Container>
             <Wrapper>
@@ -102,14 +106,18 @@ const Menu = ({darkMode, setDarkMode}) => {
                         Home
                     </Item>
                 </Link>
-                <Item>
-                    <ExploreOutlinedIcon />
-                    Explore
-                </Item>
-                <Item>
-                    <SubscriptionsOutlinedIcon />
-                    Subscriptions
-                </Item>
+                <Link to="/trends" style={{textDecoration: "none", color: "inherit"}}>
+                    <Item>
+                        <ExploreOutlinedIcon />
+                        Explore
+                    </Item>
+                </Link>
+                <Link to="/sub" style={{color: "inherit", textDecorationLine: "none"}}>
+                    <Item>
+                        <SubscriptionsOutlinedIcon />
+                        Subscriptions
+                    </Item>
+                </Link>
                 <Hr />
                 <Item>
                     <VideoLibraryOutlinedIcon />
@@ -120,12 +128,16 @@ const Menu = ({darkMode, setDarkMode}) => {
                     History
                 </Item>
                 <Hr />
-                <Login >
-                    Sign In to like videos, comment and subscribe!
-                    <Link to="/signin" style={{textDecoration: "none"}}>
-                        <LoginButton><AccountCircleOutlinedIcon />SIGN IN</LoginButton>
-                    </Link>
-                </Login>
+                <>
+                    {!currentUser && (
+                        <Login >
+                            Sign In to like videos, comment and subscribe!
+                            <Link to="/signin" style={{textDecoration: "none"}}>
+                                <LoginButton><AccountCircleOutlinedIcon />SIGN IN</LoginButton>
+                            </Link>
+                        </Login>
+                    )}
+                </>
                 <Hr />
                 <Title>Best of YussTube</Title>
                 <Item>

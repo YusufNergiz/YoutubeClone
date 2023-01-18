@@ -1,11 +1,13 @@
-import React from "react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
+import { format } from "timeago.js";
 
 const Container = styled.div`
     display: flex;
     gap: 10px;   
     margin: 30px 0px;
-    color: ${({theme}) => theme.text}
+    color: ${({theme}) => theme.text};
 `
 
 const Avatar = styled.img`
@@ -38,13 +40,30 @@ const Text = styled.span`
     font-size: 14px;
 `
 
-const Comment = () => {
+const Comment = ({commentData}) => {
+
+    const [commentOwner, setCommentOwner] = useState();
+
+    useEffect(() => {
+        const fetchCommentOwner = async () => {
+            try {
+                const currentCommentOwner = await axios.get(`http://localhost:3000/api/users/find/${commentData.userId}`, {
+                    withCredentials: true
+                })
+                setCommentOwner(currentCommentOwner.data);
+            } catch (error) {
+                console.log(error.message)
+            }
+        }
+        fetchCommentOwner();
+    })
+
     return (
         <Container>
-            <Avatar src="https://i.guim.co.uk/img/media/28533e565bb4c54c399e162ab306b19c541994f9/0_97_3158_1895/master/3158.jpg?width=1200&height=900&quality=85&auto=format&fit=crop&s=33de91116039176f3b67a6d3232cdf30"/>
+            <Avatar src={commentOwner?.img}/>
             <Details>
-                <Name>Yussuf Nergiz <Date>1 month ago</Date></Name>
-                <Text>Lorem ipsum dolor sit amet consectetur adipisicing elit. Ab quo a accusamus molestiae quia dolore culpa ullam quae dolorum nisi aut vitae esse quam, aspernatur expedita ratione porro dicta explicabo!</Text>
+                <Name>{commentOwner?.name} <Date>{format(commentData?.createdAt)}</Date></Name>
+                <Text>{commentData?.message}</Text>
             </Details>
         </Container>
     );
