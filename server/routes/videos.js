@@ -12,6 +12,7 @@ const addVideo = async (req, res, next) => {
         // Setting the userId of the video to the current User, and getting the rest of the
         // video info ( title, description, etc ) from the body.
         const newVideo = new Video({ userId: req.user.id, ...req.body });
+        console.log("Hi")
         const savedVideo = await newVideo.save();
         res.status(200).json(savedVideo);
     } catch (error) {
@@ -120,6 +121,7 @@ const getByTags = async (req, res, next) => {
         const tags = req.query.tags.split(',');
         // Get the videos from the database that contains the given tags in their "tags" array.
         const videosWithTags = await Video.find({ tags: { $in: tags } }).limit(20);
+        console.log(videosWithTags)
         res.status(200).json(videosWithTags);
     } catch (error) {
         next(error)
@@ -128,8 +130,7 @@ const getByTags = async (req, res, next) => {
 
 const searchVideos = async (req, res, next) => {
     try {
-        const searchedTitle = req.query.title;
-
+        const searchedTitle = req.query.q;
         const searchedVideos = await Video.find({ title: { $regex: searchedTitle, $options: 'i' } }).limit(40);
         res.status(200).json(searchedVideos);
     } catch (error) {

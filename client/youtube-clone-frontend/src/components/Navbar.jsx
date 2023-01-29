@@ -3,9 +3,8 @@ import styled from "styled-components";
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import VideoCallOutlinedIcon from '@mui/icons-material/VideoCallOutlined';
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/userSlice";
 import UploadVideo from "./UploadVideo";
@@ -96,6 +95,9 @@ const Navbar = () => {
 
     const { currentUser } = useSelector((state) => state.user);
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const [videoTitle, setVideoTitle] = useState("");
 
     // Video Upload Button State
     const [uploadVideoTabOpen, setUploadVideoTabOpen] = useState(false);
@@ -110,10 +112,8 @@ const Navbar = () => {
             <Container>
                 <Wrapper>
                     <Search htmlFor="search">
-                        <Input placeholder="Search" id="search" name="search"/>
-                        <Link to="/video/searchedVideo" style={{textDecoration: "none", color: "inherit"}}>
-                            <SearchOutlinedIcon />
-                        </Link>
+                        <Input placeholder="Search" id="search" name="search" onChange={(e) => setVideoTitle(e.target.value)}/>
+                        <SearchOutlinedIcon style={{cursor: 'pointer'}} onClick={() => navigate(`/search?q=${videoTitle}`)}/>
                     </Search>
                     {currentUser ? (
                         <UserDashContainer>

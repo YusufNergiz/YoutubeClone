@@ -45,7 +45,6 @@ const Comments = ({videoId}) => {
             }
         }
         fetchVideoComments();
-        console.log(allComments)
     }, [])
 
     return (

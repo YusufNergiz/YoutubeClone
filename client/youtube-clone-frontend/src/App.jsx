@@ -11,6 +11,7 @@ import Error from './pages/Error';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Signin from './pages/Signin';
+import Search from './pages/Search';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -19,6 +20,7 @@ const router = createBrowserRouter(
           <Route index element={<Home type="random"/>} loader={() => homeLoader("random")}></Route>
           <Route path='/trends' element={<Home type="trend"/>} loader={() => homeLoader("trend")}></Route>
           <Route path='/sub' element={<Home type="sub"/>} loader={() => homeLoader("sub")}></Route>
+          <Route path='/search' element={<Search />}></Route>
         <Route path="/video">
           <Route path=":id" element={<Video />} loader={videoLoader}></Route>
         </Route>

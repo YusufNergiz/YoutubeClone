@@ -33,7 +33,7 @@ export const videoSlice = createSlice({
         dislikeVideo: (state, action) => {
             if (!state.currentVideo.dislikes.includes(action.payload)) {
                 state.currentVideo.dislikes.push(action.payload);
-                state.currentVideo.dislikes.splice(state.currentVideo.dislikes.indexOf((userId) => userId === action.payload));
+                state.currentVideo.likes.splice(state.currentVideo.likes.indexOf((userId) => userId === action.payload));
             }
         }
     }

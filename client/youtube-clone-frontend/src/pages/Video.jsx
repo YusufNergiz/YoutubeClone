@@ -8,15 +8,15 @@ import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 
 import Comments from "../components/Comments";
-import Card from "../components/Card";
 import { useLoaderData, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchingFailure, fetchingSuccess, startFetching } from "../redux/videoSlice";
+import { likeVideo, dislikeVideo, fetchingFailure, fetchingSuccess, startFetching } from "../redux/videoSlice";
 import { format } from "timeago.js";
 import { subscription } from "../redux/userSlice";
 
 import Cookies from 'js-cookie';
+import Recommendation from "../components/Recommendation";
 
 
 const Container = styled.div`
@@ -31,10 +31,6 @@ const Hr = styled.hr`
 
 const Content = styled.div`
     flex: 5;
-`
-
-const Recommendation = styled.div`
-    flex: 2.5;
 `
 
 const VideoWrapper = styled.div`
@@ -119,7 +115,10 @@ const Image = styled.img`
 `
 
 const VideoFrame = styled.video`
+    position: relative;
+    overflow: hidden;
     max-height: 720px;
+    height: 450px;
     width: 100%;
     object-fit: cover;
 `
@@ -155,37 +154,41 @@ const Video = () => {
     }, [videoId, dispatch])
 
 
-    const dislikeVideo = async () => {
-        await axios.put(`http://localhost:3000/api/users/dislike/${currentVideo._id}`);
-        dispatch(dislikeVideo(currentUser._id));
-    }
-
-    const likeVideo = async () => {
-        console.log("lIKE BUTTON CLICKED")
-        await axios.put(`http://localhost:3000/api/users/like/${currentVideo._id}`, {
+    const dislike = async () => {
+        await axios.put(`http://localhost:3000/api/users/dislike/${currentVideo._id}`, {
             withCredentials: true,
             headers: {
                 access_token: accessToken
             }
         });
+        dispatch(dislikeVideo(currentUser._id));
+    }
+
+    const like = async () => {
+        await axios.put(`http://localhost:3000/api/users/like/${currentVideo._id}`, {
+            withCredentials: true,
+            headers: {
+                access_token: accessToken
+            }
+        })
         dispatch(likeVideo(currentUser._id));
     }
 
     const handleSubscription = async () => {
         if (currentUser.subscribedUsers?.includes(currentVideo.userId)) {
             await axios.put(`http://localhost:3000/api/users/unsub/${currentVideo.userId}`, {
+                withCredentials: true,
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
+                    access_token: accessToken
                 }
             });
             dispatch(subscription(currentVideo.userId));
         }
         else {
             await axios.put(`http://localhost:3000/api/users/sub/${currentVideo.userId}`, {
+                withCredentials: true,
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
+                    access_token: accessToken
                 }
             });
             dispatch(subscription(currentVideo.userId));
@@ -196,16 +199,16 @@ const Video = () => {
         <Container className="row">
             <Content className="col-xl-8 col-12">
                 <VideoWrapper>
-                    <VideoFrame src={currentVideo?.videoUrl}/>
+                    <VideoFrame src={currentVideo?.videoUrl} controls/>
                 </VideoWrapper>
                 <Title>{currentVideo?.title}</Title>
                 <VideoDetails>
                     <Info>{currentVideo?.views} views • {format(currentVideo?.createdAt)}</Info>
                     <Buttons>
-                        <Button onClick={likeVideo}>
+                        <Button onClick={like}>
                             {currentVideo?.likes.includes(currentUser?._id) ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />} {currentVideo?.likes.length}
                         </Button>
-                        <Button onClick={dislikeVideo}>
+                        <Button onClick={dislike}>
                             {currentVideo?.dislikes.includes(currentUser?._id) ? <ThumbDownIcon /> : <ThumbDownOutlinedIcon />} {currentVideo?.dislikes.length}
                         </Button>
                         <Button>
@@ -227,16 +230,12 @@ const Video = () => {
                             </Description>
                         </ChannelDetail>
                     </ChannelInfo>
-                    <Subscribe onClick={handleSubscription}>{currentUser?.subscribedUsers?.includes(currentVideo.userId) ? "UNSUBSCRIBE" : "SUBSCRIBE"}</Subscribe>
+                    <Subscribe onClick={handleSubscription}>{currentUser?.subscribedUsers?.includes(currentVideo?.userId) ? "UNSUBSCRIBE" : "SUBSCRIBE"}</Subscribe>
                 </Channel>
                 <Hr />
                 <Comments videoId={currentVideo?._id}/>
             </Content>
-            <Recommendation className="col-xl-6 col-12">
-                {randomVideos.data.map(video => (
-                    <Card type="sm" videoData={video} key={video._id}/>
-                ))}
-            </Recommendation>
+            <Recommendation tags={currentVideo.tags}/>
         </Container>     
     );
 }
